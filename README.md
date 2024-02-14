@@ -21,3 +21,4 @@ A useful library of 5 asynchronous functions for using variables in extemporaneo
 </script>
 </body>
 </html>
+//Created by Giuseppe D'Ambrosio
