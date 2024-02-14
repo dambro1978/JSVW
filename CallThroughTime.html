@@ -6,14 +6,15 @@
 <script type="text/javascript" src="../bindTimeCapsule.JS"></script>
 <head>
 <body>
+ <input type="button" id="btnGet" />
 //example of usage with bindJ function with 5 param
  <script type="text/javascript">
 		$(function () {
 			$("#btnGet").click(function () {
-					;(async () => {
-					 const timeCapsule = await bindJ("Name", "POST", "api/AjaxAPI/AjaxMethod", "application/json; charset=utf-8", "json");
-					   alert(timeCapsule.Name+" "+timeCapsule.DateTime);
-					  })()
+			;(async () => {
+			const timeCapsule = await bindJ("Name", "POST", "api/AjaxAPI/AjaxMethod", "application/json; charset=utf-8", "json");
+			alert(timeCapsule.Name+" "+timeCapsule.DateTime);
+		    })()
 		  });
 		});
 </script>
