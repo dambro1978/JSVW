@@ -1,5 +1,5 @@
 # BindTimeCapsule
-A a useful library of 5 asynchronous functions for using variables in impromptu parallel streams. It can be enriched
+A a useful library of 5 asynchronous functions for using variables in extemporaneous parallel streams. It can be enriched
 <html>
 <head>
 //need jquery
