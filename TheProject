@@ -1,0 +1,5 @@
+These libraries allow you to make asynchronous calls to any service or api or rpc, c#, php, java etc...
+storing the result also in an asynchronous variable.
+Indeed a time capsule.
+Ideal for use with jquery controls, or others,
+It can be an alternative to Angular or for binding to ReactJS, SignalR etc.
