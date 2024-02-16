@@ -7,6 +7,7 @@
 <head>
 <body>
  <input type="button" id="btnGet" />
+ <input type="button" id="btnListener" />
 //example of usage with bindJ function with 5 param
  <script type="text/javascript">
 		$(function () {
@@ -16,6 +17,18 @@
 			alert(timeCapsule.Name+" "+timeCapsule.DateTime);
 		    })()
 		  });
+		});
+</script>
+	//Listener
+<script type="text/javascript">
+		$(function () {
+			$("#btnListener").click(setInterval(function () {
+			;(async () => {
+			const timeCapsule = await bindJ("Name", "POST", "api/AjaxAPI/AjaxMethod", "application/json; charset=utf-8", "json");
+			alert(timeCapsule.Name+" "+timeCapsule.DateTime);
+		    })()
+		  });
+		,300);
 		});
 </script>
 </body>
