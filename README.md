@@ -1,11 +1,18 @@
 # BindTimeCapsule
 // A useful library of 4+1 asynchronous functions for using variables in extemporaneous parallel streams. 
+
 // It can be enriched
+
 // bindJ(data, Type, url, contentType, dataType) passing Json document, data format or control view interface
+
 // bindJ(data, Type, url) passing Json document, data format, or control view interface
+
 // bindS(data, Type, url) passing String document, data format or control view interface
+
 // bindX(data, Type, url) passing XML document, data format or control view interface
+
 // bindH(data, Type, url) passing Html document, data format or control view interface
+
 <html>
 <head>
 //need jquery
