@@ -3,15 +3,15 @@
 
 // It can be enriched
 
-// bindJ(data, Type, url, contentType, dataType) passing Json document, data format or control view interface
+// bindJ(data, Type, url, contentType, dataType) passing Json document, data format, or data for control view interface like jquery UI
 
-// bindJ(data, Type, url) passing Json document, data format, or control view interface
+// bindJ(data, Type, url) passing Json document, data format, or data for control view interface like jquery UI
 
-// bindS(data, Type, url) passing String document, data format or control view interface
+// bindS(data, Type, url) passing String document, data format or  data for control view interface like jquery UI
 
-// bindX(data, Type, url) passing XML document, data format or control view interface
+// bindX(data, Type, url) passing XML document, data format or  data for control view interface like jquery UI
 
-// bindH(data, Type, url) passing Html document, data format or control view interface
+// bindH(data, Type, url) passing Html document, data format or data for control view interface like jquery UI
 
 <html>
 <head>
