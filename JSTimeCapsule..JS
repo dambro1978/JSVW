@@ -1,120 +1,124 @@
-async function bindJ(data, Type, url, contentType, dataType) {
-			let storeCapsule;
-			await $.ajax({
-				type: Type,
-				url: url,
-				data: data,
-				contentType: contentType,
-				dataType: dataType,
-				success: function (response) {
-					const structJson = JSON.stringify(response);
-					storeCapsule = JSON.parse(structJson);
-				},
-				failure: function (response) {
-					storeCapsule=response.responseText; 
-					return storeCapsule;
-				},
-				error: function (response) {
-					storeCapsule=response.responseText; 
-					return storeCapsule;
-				}
+ async function bindJ(data, Type, url, contentType, dataType) {
+     let storeCapsule;
+     await $.ajax({
+         type: Type,
+         url: url,
+         data: data,
+         contentType: contentType,
+         dataType: dataType,
+         success: function (response) {
+             const structJson = JSON.stringify(response);
+             storeCapsule = JSON.parse(structJson);
+         },
+         failure: function (response) {
+             storeCapsule = response.responseText;
+             return storeCapsule;
+         },
+         error: function (response) {
+             storeCapsule = response.responseText;
+             return storeCapsule;
+         }
 
-			});
-			
-			  return storeCapsule;
-		}
-		async function bindJ(data, Type, url) {
-			let storeCapsule;
-			await $.ajax({
-				type: Type,
-				url: url,
-				data: data,
-				contentType: "application/json; charset=utf-8",
-				dataType: "json",
-				success: function (response) {
-				   
-					const structJson = JSON.stringify(response);
-					storeCapsule = JSON.parse(structJson);
-				},
-				failure: function (response) {
-					storeCapsule=response.responseText; 
-					return storeCapsule;
-				},
-				error: function (response) {
-					storeCapsule=response.responseText; 
-					return storeCapsule;
-				}
+     });
 
-			});
-			
-			  return storeCapsule;
-		}
-		async function bindS(data, Type, url) {
-			let storeCapsule;
-			await $.ajax({
-				type: Type,
-				url: url,
-				data: data
-				success: function (response) {
-				storeCapsule=response;
-				},
-				failure: function (response) {
-					storeCapsule=response; return storeCapsule;
-				},
-				error: function (response) {
-					storeCapsule=response; return storeCapsule;
-				}
+     return storeCapsule;
+ }
 
-			});
-			
-			  return storeCapsule;
-		}
-		async function bindX(data, Type, url) {
-			let storeCapsule;
-			await $.ajax({
-				type: Type,
-				url: url,
-				dataType: "xml",
-				dataType: dataType,
-				success: function (response) {
-				const structXML = response.toXMLString();
-				const parser = new DOMParser();
-				storeCapsule = parser.parseFromString(structXML, "application/xml");
-				},
-				failure: function (response) {
-					storeCapsule=response; 
-					return storeCapsule;
-				},
-				error: function (response) {
-					storeCapsule=response; 
-					return storeCapsule;
-				}
+ async function bindJ(data, Type, url) {
+     let storeCapsule;
+     await $.ajax({
+         type: Type,
+         url: url,
+         data: data,
+         contentType: "application/json; charset=utf-8",
+         dataType: "json",
+         success: function (response) {
 
-			});
-			
-			  return storeCapsule;
-		}
-		async function bindH(data, Type, url) {
-			let storeCapsule;
-			await $.ajax({
-				type: Type,
-				url: url,
-				dataType : 'html',
-				dataType: dataType,
-				success: function (response) {
-				 storeCapsule=response;
-				},
-				failure: function (response) {
-					storeCapsule=response; 
-					return storeCapsule;
-				},
-				error: function (response) {
-					storeCapsule=response; 
-					return storeCapsule;
-				}
+             const structJson = JSON.stringify(response);
+             storeCapsule = JSON.parse(structJson);
+         },
+         failure: function (response) {
+             storeCapsule = response.responseText;
+             return storeCapsule;
+         },
+         error: function (response) {
+             storeCapsule = response.responseText;
+             return storeCapsule;
+         }
 
-			});
-			
-			  return storeCapsule;
-		}
-//Created by Giuseppe D'Ambrosio
+     });
+
+     return storeCapsule;
+ }
+ async function bindS(data, Type, url) {
+     let storeCapsule;
+     await $.ajax({
+         type: Type,
+         url: url,
+         data: data,
+         contentType: "charset=utf-8",
+         dataType: "string",
+             success: function (response) {
+             storeCapsule = response;
+         },
+         failure: function (response) {
+             storeCapsule = response; return storeCapsule;
+         },
+         error: function (response) {
+             storeCapsule = response; return storeCapsule;
+         }
+
+     });
+
+     return storeCapsule;
+ }
+ async function bindX(data, Type, url) {
+     let storeCapsule;
+     await $.ajax({
+         type: Type,
+         url: url,
+         dataType: "xml",
+         contentType: "charset=utf-8",
+         success: function (response) {
+             const structXML = response.toXMLString();
+             const parser = new DOMParser();
+             storeCapsule = parser.parseFromString(structXML, "application/xml");
+         },
+         failure: function (response) {
+             storeCapsule = response;
+             return storeCapsule;
+         },
+         error: function (response) {
+             storeCapsule = response;
+             return storeCapsule;
+         }
+
+     });
+
+     return storeCapsule;
+ }
+ async function bindH(data, Type, url) {
+     let storeCapsule;
+     await $.ajax({
+         type: Type,
+         url: url,
+         dataType: 'html',
+         contentType: "charset=utf-8",
+         success: function (response) {
+             storeCapsule = response;
+         },
+         failure: function (response) {
+             storeCapsule = response;
+             return storeCapsule;
+         },
+         error: function (response) {
+             storeCapsule = response;
+             return storeCapsule;
+         }
+
+     });
+
+     return storeCapsule;
+ }
+
+	//Created by Giuseppe D'Ambrosio
