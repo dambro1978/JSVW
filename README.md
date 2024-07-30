@@ -3,15 +3,17 @@
 
 // It can be enriched
 
-// bindJ(data, Type, url, contentType, dataType) passing Json document, data format, or data for control view interface like jquery UI
+// bindJ(data, Type, url, contentType, dataType) passing Json text, data format, or data for control view interface like jquery UI
 
-// bindJ(data, Type, url) passing Json document, data format, or data for control view interface like jquery UI
+// bindJ(data, Type, url) passing Json text, data format, or data for control view interface like jquery UI
 
-// bindS(data, Type, url) passing String document, data format or  data for control view interface like jquery UI
+// bindS(data, Type, url) passing String text, data format or  data for control view interface like jquery UI
 
-// bindX(data, Type, url) passing XML document, data format or  data for control view interface like jquery UI
+// bindX(data, Type, url) passing XML text, data format or  data for control view interface like jquery UI
 
-// bindH(data, Type, url) passing Html document, data format or data for control view interface like jquery UI
+// bindB(data, Type, url) passing some text the function converts it into bits and does the binding, while the response in bits is converted into text
+
+// bindH(data, Type, url) passing Html text, data format or data for control view interface like jquery UI
 
 <html>
 <head>
