@@ -122,5 +122,50 @@
 
      return storeCapsule;
  }
+ async function bindB(data, Type, url) {
+     datab=textToBinary(data);
+     let storeCapsule;
+     await $.ajax({
+         type: Type,
+         url: url,
+         data: datab,
+         contentType: "charset=utf-8",
+         dataType: "string",
+             success: function (response) {
+	     storeCapsuleB = response;
+	     storeCapsule = binaryToText(storeCapsuleB);
+         },
+         failure: function (response) {
+             storeCapsule = response; return storeCapsule;
+         },
+         error: function (response) {
+             storeCapsule = response; return storeCapsule;
+         }
 
+     });
+
+     return storeCapsule;
+ }
+
+
+function binaryToText(str) {
+  let output = [];
+  str.split(" ").forEach((element) => {
+   if (element!=""){
+    output.push(String.fromCharCode(parseInt(element, 2)));
+	}
+  });
+  return output.join("");
+}
+
+
+function textToBinary(str) {
+  let output = "";
+  str.split("").forEach((element) => {
+    let char = element.charCodeAt(0).toString(2);
+	
+    output += ("00000000" + char).slice(-8).concat(" ");
+  });
+  return output;
+}
 	//Created by Giuseppe D'Ambrosio
