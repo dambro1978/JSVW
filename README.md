@@ -1,5 +1,8 @@
 # BindTimeCapsule
-// A useful library of 4+1 asynchronous functions for using variables in extemporaneous parallel streams. 
+// A useful library of 5+1 asynchronous functions for using variables in extemporaneous parallel streams.
+//and 2 functions,
+one to convert text to binary: binaryToText();
+and the second to convert the binary to text format: binaryToText().
 
 // It can be enriched
 
@@ -14,6 +17,11 @@
 // bindB(data, Type, url) passing some text the function converts it into bits and does the binding, while the response in bits is converted into text
 
 // bindH(data, Type, url) passing Html text, data format or data for control view interface like jquery UI
+
+// binaryToText() to convert binary in to text
+
+// textToBinary() to convert text in binary
+
 
 <html>
 <head>
