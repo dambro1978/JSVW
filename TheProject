@@ -20,6 +20,6 @@ It can be enriched
 
  bindH(data, Type, url) passing Html text, data format or data for control view interface like jquery UI
 
- binaryToText() to convert binary in to text
+ binaryToText() to convert binary in text
 
  textToBinary() to convert text in binary
