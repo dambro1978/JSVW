@@ -1,10 +1,5 @@
-# BindTimeCapsule
-// A useful library of 5+1 asynchronous functions for using variables in extemporaneous parallel streams.
-//and 2 functions,
-one to convert text to binary: binaryToText();
-and the second to convert the binary to text format: binaryToText().
+# JSTimeCapsule 
 
-// It can be enriched
 
 // bindJ(data, Type, url, contentType, dataType) passing Json text, data format, or data for control view interface like jquery UI
 
