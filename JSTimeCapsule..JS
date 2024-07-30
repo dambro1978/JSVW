@@ -78,6 +78,7 @@
          type: Type,
          url: url,
          dataType: "xml",
+	data: data,
          contentType: "charset=utf-8",
          success: function (response) {
              const structXML = response.toXMLString();
@@ -102,6 +103,7 @@
      await $.ajax({
          type: Type,
          url: url,
+	data: data,
          dataType: 'html',
          contentType: "charset=utf-8",
          success: function (response) {
