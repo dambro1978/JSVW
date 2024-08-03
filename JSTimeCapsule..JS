@@ -168,4 +168,27 @@ function textToBinary(str) {
   });
   return output;
 }
+
+async function bindS(data, url) {
+     let storeCapsule;
+     await $.ajax({
+         type: 'POST',
+         url: url,
+         data: data,
+         contentType: "charset=utf-8",
+         dataType: "string",
+             success: function (response) {
+             storeCapsule = response;
+         },
+         failure: function (response) {
+             storeCapsule = response; return storeCapsule;
+         },
+         error: function (response) {
+             storeCapsule = response; return storeCapsule;
+         }
+
+     });
+
+     return storeCapsule;
+ }
 	//Created by Giuseppe D'Ambrosio
