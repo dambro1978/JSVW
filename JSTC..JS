@@ -1,5 +1,5 @@
   // Use default values if inputs are empty
-  const gradientThreshold = parseFloat(thresholdInput x 100) || 500; // Default to 500 if input is invalid
+  const gradientThreshold = parseFloat(thresholdInput) || 500; // Default to 500 if input is invalid
   const gaussSize = parseInt(gaussSizeInput, 10) || 5; // Default to 5 if input is invalid
 
 async function bindJ(data, Type, url, contentType, dataType) {
