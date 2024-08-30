@@ -1,4 +1,5 @@
 These libraries JSTC.JS allow you to make asynchronous calls to any service or api or rpc, c#, php, java etc...
+And contains several functions for computer vision in javascript
 storing the result also in an asynchronous variable.
 Indeed a time capsule.
 Ideal for use with jquery controls, or others,
