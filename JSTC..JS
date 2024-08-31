@@ -1,4 +1,5 @@
   // Use default values if inputs are empty
+   // Use default values if inputs are empty
   const gradientThreshold = parseFloat(thresholdInput) || 500; // Default to 500 if input is invalid
   const gaussSize = parseInt(gaussSizeInput, 10) || 5; // Default to 5 if input is invalid
 
@@ -28,7 +29,7 @@ async function bindJ(data, Type, url, contentType, dataType) {
      return storeCapsule;
  }
 
- async function bindJ(data, Type, url) {
+ async function bindJ3(data, Type, url) {
      let storeCapsule;
      await $.ajax({
          type: Type,
@@ -195,8 +196,7 @@ async function bindS(data, url) {
 
      return storeCapsule;
  }
-	function createGaussianKernel(size = 5, sigma = 1.0) {
-            // Default size is 5 and sigma is 1.0 if not provided
+        function createGaussianKernel(size = 5, sigma = 1.0) {
             const kernel = [];
             const center = Math.floor(size / 2);
             const twoSigmaSquared = 2 * sigma * sigma;
@@ -211,12 +211,10 @@ async function bindS(data, url) {
                     kernel[y][x] = value;
                 }
             }
-
             return kernel;
         }
 
         function applyGaussianBlur(imageData, width, height, size = 5, sigma = 1.0) {
-            // Default size is 5 and sigma is 1.0 if not provided
             const halfSize = Math.floor(size / 2);
             const output = new Uint8ClampedArray(width * height * 4);
             const kernel = createGaussianKernel(size, sigma);
@@ -242,12 +240,54 @@ async function bindS(data, url) {
                     output[outputIndex + 3] = 255;
                 }
             }
-
             return new ImageData(output, width, height);
         }
 
+        function calculateGradientValue(imageData, x, y, width) {
+            const gx = (
+                -imageData[(y - 1) * width * 4 + (x - 1) * 4] +
+                imageData[(y - 1) * width * 4 + (x + 1) * 4] +
+                -2 * imageData[y * width * 4 + (x - 1) * 4] +
+                2 * imageData[y * width * 4 + (x + 1) * 4] +
+                -imageData[(y + 1) * width * 4 + (x - 1) * 4] +
+                imageData[(y + 1) * width * 4 + (x + 1) * 4]
+            );
+
+            const gy = (
+                -imageData[(y - 1) * width * 4 + (x - 1) * 4] +
+                -2 * imageData[(y - 1) * width * 4 + x * 4] +
+                -imageData[(y - 1) * width * 4 + (x + 1) * 4] +
+                imageData[(y + 1) * width * 4 + (x - 1) * 4] +
+                2 * imageData[(y + 1) * width * 4 + x * 4] +
+                imageData[(y + 1) * width * 4 + (x + 1) * 4]
+            );
+
+            const gradientMagnitude = Math.sqrt(gx * gx + gy * gy);
+
+            return gradientMagnitude;
+        }
+
+        function calculateDiagonalProductForPoint(imageData, x, y, width, gaussSize, sigma) {
+            const halfSize = Math.floor(gaussSize / 2);
+            const kernel = createGaussianKernel(gaussSize, sigma);
+            let product = 1;
+
+            for (let ky = -halfSize; ky <= halfSize; ky++) {
+                for (let kx = -halfSize; kx <= halfSize; kx++) {
+                    const ix = Math.min(width - 1, Math.max(0, x + kx));
+                    const iy = Math.min(width - 1, Math.max(0, y + ky));
+                    const kernelValue = kernel[ky + halfSize][kx + halfSize];
+                    if (kx === ky) {
+                        product *= kernelValue;
+                    }
+                }
+            }
+
+            return product;
+        }
+
         function detectKeypoints(image, gradientThreshold = 500, gaussSize = 5) {
-            const sigma = 1.0; // Standard deviation for the Gaussian filter
+            const sigma = 1.0;
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = image.width;
@@ -255,45 +295,26 @@ async function bindS(data, url) {
             ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-            // Apply Gaussian filter
             const blurredImageData = applyGaussianBlur(imageData.data, canvas.width, canvas.height, gaussSize, sigma);
-
-            // Detect keypoints based on Harris Corner
-            return detectKeypointsFromImageData(blurredImageData.data, canvas.width, canvas.height, gradientThreshold);
+            return detectKeypointsFromImageData(blurredImageData.data, canvas.width, canvas.height, gradientThreshold, gaussSize);
         }
 
-        function detectKeypointsFromImageData(imageData, width, height, gradientThreshold) {
+        function detectKeypointsFromImageData(imageData, width, height, gradientThreshold, gaussSize) {
             const keypoints = [];
-            const step = 1; // Step size for scanning pixels
+            const halfSize = Math.floor(gaussSize / 2);
 
-            // Use Harris Corner method to detect corners
-            for (let y = 1; y < height - 1; y++) {
-                for (let x = 1; x < width - 1; x++) {
-                    const index = (y * width + x) * 4;
-
-                    // Calculate gradients
-                    const gx = (
-                        -imageData[(y - 1) * width * 4 + (x - 1) * 4] +
-                        imageData[(y - 1) * width * 4 + (x + 1) * 4] +
-                        -2 * imageData[y * width * 4 + (x - 1) * 4] +
-                        2 * imageData[y * width * 4 + (x + 1) * 4] +
-                        -imageData[(y + 1) * width * 4 + (x - 1) * 4] +
-                        imageData[(y + 1) * width * 4 + (x + 1) * 4]
-                    );
-
-                    const gy = (
-                        -imageData[(y - 1) * width * 4 + (x - 1) * 4] +
-                        -2 * imageData[(y - 1) * width * 4 + x * 4] +
-                        -imageData[(y - 1) * width * 4 + (x + 1) * 4] +
-                        imageData[(y + 1) * width * 4 + (x - 1) * 4] +
-                        2 * imageData[(y + 1) * width * 4 + x * 4] +
-                        imageData[(y + 1) * width * 4 + (x + 1) * 4]
-                    );
-
-                    const gradientMagnitude = Math.sqrt(gx * gx + gy * gy);
+            for (let y = halfSize; y < height - halfSize; y++) {
+                for (let x = halfSize; x < width - halfSize; x++) {
+                    const gradientMagnitude = calculateGradientValue(imageData, x, y, width);
 
                     if (gradientMagnitude > gradientThreshold) {
-                        keypoints.push({ x, y });
+                        const diagonalProduct = calculateDiagonalProductForPoint(imageData, x, y, width, gaussSize, 1.0);
+                        keypoints.push({
+                            x,
+                            y,
+                            diagonalProduct,
+                            gradientMagnitude
+                        });
                     }
                 }
             }
@@ -303,28 +324,28 @@ async function bindS(data, url) {
         function drawImageWithKeypoints(image, keypoints) {
             const originalCanvas = document.getElementById('originalCanvas');
             const keypointsCanvas = document.getElementById('keypointsCanvas');
-            const ctxOriginal = originalCanvas.getContext('2d');
-            const ctxKeypoints = keypointsCanvas.getContext('2d');
+            const originalCtx = originalCanvas.getContext('2d');
+            const keypointsCtx = keypointsCanvas.getContext('2d');
 
             originalCanvas.width = image.width;
             originalCanvas.height = image.height;
             keypointsCanvas.width = image.width;
             keypointsCanvas.height = image.height;
 
-            ctxOriginal.drawImage(image, 0, 0, image.width, image.height);
-            ctxKeypoints.drawImage(image, 0, 0, image.width, image.height);
+            originalCtx.drawImage(image, 0, 0);
 
-            ctxKeypoints.strokeStyle = 'red';
-            ctxKeypoints.lineWidth = 2;
+            keypointsCtx.drawImage(image, 0, 0);
+            keypointsCtx.globalCompositeOperation = 'source-over';
+            keypointsCtx.strokeStyle = 'red';
+            keypointsCtx.lineWidth = 2;
+
             keypoints.forEach(point => {
-                ctxKeypoints.beginPath();
-                ctxKeypoints.arc(point.x, point.y, 5, 0, 2 * Math.PI);
-                ctxKeypoints.stroke();
+                keypointsCtx.beginPath();
+                keypointsCtx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+                keypointsCtx.stroke();
             });
         }
-
-
-
+		
 
 
 
