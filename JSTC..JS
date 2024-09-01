@@ -196,6 +196,7 @@ async function bindS(data, url) {
 
      return storeCapsule;
  }
+      // Function to create Gaussian kernel
         function createGaussianKernel(size = 5, sigma = 1.0) {
             const kernel = [];
             const center = Math.floor(size / 2);
@@ -214,6 +215,7 @@ async function bindS(data, url) {
             return kernel;
         }
 
+        // Function to apply Gaussian blur to image data
         function applyGaussianBlur(imageData, width, height, size = 5, sigma = 1.0) {
             const halfSize = Math.floor(size / 2);
             const output = new Uint8ClampedArray(width * height * 4);
@@ -243,7 +245,8 @@ async function bindS(data, url) {
             return new ImageData(output, width, height);
         }
 
-        function calculateGradientValue(imageData, x, y, width) {
+        // Function to calculate the gradient magnitude and orientation at a point
+        function calculateGradient(imageData, x, y, width) {
             const gx = (
                 -imageData[(y - 1) * width * 4 + (x - 1) * 4] +
                 imageData[(y - 1) * width * 4 + (x + 1) * 4] +
@@ -262,30 +265,33 @@ async function bindS(data, url) {
                 imageData[(y + 1) * width * 4 + (x + 1) * 4]
             );
 
-            const gradientMagnitude = Math.sqrt(gx * gx + gy * gy);
+            const magnitude = Math.sqrt(gx * gx + gy * gy);
+            const orientation = Math.atan2(gy, gx) * (180 / Math.PI); // Convert radians to degrees
 
-            return gradientMagnitude;
+            return { magnitude, orientation };
         }
 
-        function calculateDiagonalProductForPoint(imageData, x, y, width, gaussSize, sigma) {
+        // Function to calculate the descriptor for a point
+        function calculateDescriptor(imageData, x, y, width, gaussSize) {
             const halfSize = Math.floor(gaussSize / 2);
-            const kernel = createGaussianKernel(gaussSize, sigma);
-            let product = 1;
+            const descriptors = [];
 
             for (let ky = -halfSize; ky <= halfSize; ky++) {
                 for (let kx = -halfSize; kx <= halfSize; kx++) {
                     const ix = Math.min(width - 1, Math.max(0, x + kx));
                     const iy = Math.min(width - 1, Math.max(0, y + ky));
-                    const kernelValue = kernel[ky + halfSize][kx + halfSize];
-                    if (kx === ky) {
-                        product *= kernelValue;
-                    }
+                    const index = (iy * width + ix) * 4;
+                    descriptors.push(imageData[index]);
                 }
             }
 
-            return product;
+            // Calculate mean of the descriptors
+            const mean = descriptors.reduce((sum, value) => sum + value, 0) / descriptors.length;
+
+            return mean;
         }
 
+        // Function to detect keypoints
         function detectKeypoints(image, gradientThreshold = 500, gaussSize = 5) {
             const sigma = 1.0;
             const canvas = document.createElement('canvas');
@@ -299,21 +305,23 @@ async function bindS(data, url) {
             return detectKeypointsFromImageData(blurredImageData.data, canvas.width, canvas.height, gradientThreshold, gaussSize);
         }
 
+        // Function to detect keypoints from image data
         function detectKeypointsFromImageData(imageData, width, height, gradientThreshold, gaussSize) {
             const keypoints = [];
             const halfSize = Math.floor(gaussSize / 2);
 
             for (let y = halfSize; y < height - halfSize; y++) {
                 for (let x = halfSize; x < width - halfSize; x++) {
-                    const gradientMagnitude = calculateGradientValue(imageData, x, y, width);
+                    const { magnitude, orientation } = calculateGradient(imageData, x, y, width);
 
-                    if (gradientMagnitude > gradientThreshold) {
-                        const diagonalProduct = calculateDiagonalProductForPoint(imageData, x, y, width, gaussSize, 1.0);
+                    if (magnitude > gradientThreshold) {
+                        const descriptorMean = calculateDescriptor(imageData, x, y, width, gaussSize);
                         keypoints.push({
                             x,
                             y,
-                            diagonalProduct,
-                            gradientMagnitude
+                            descriptorMean,
+                            gradientMagnitude: magnitude,
+                            gradientOrientation: orientation
                         });
                     }
                 }
@@ -321,6 +329,7 @@ async function bindS(data, url) {
             return keypoints;
         }
 
+        // Function to draw the image with keypoints
         function drawImageWithKeypoints(image, keypoints) {
             const originalCanvas = document.getElementById('originalCanvas');
             const keypointsCanvas = document.getElementById('keypointsCanvas');
@@ -332,21 +341,16 @@ async function bindS(data, url) {
             keypointsCanvas.width = image.width;
             keypointsCanvas.height = image.height;
 
-            originalCtx.drawImage(image, 0, 0);
+            originalCtx.drawImage(image, 0, 0, originalCanvas.width, originalCanvas.height);
+            keypointsCtx.drawImage(image, 0, 0, keypointsCanvas.width, keypointsCanvas.height);
 
-            keypointsCtx.drawImage(image, 0, 0);
-            keypointsCtx.globalCompositeOperation = 'source-over';
-            keypointsCtx.strokeStyle = 'red';
-            keypointsCtx.lineWidth = 2;
-
+            keypointsCtx.fillStyle = 'red';
             keypoints.forEach(point => {
                 keypointsCtx.beginPath();
-                keypointsCtx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-                keypointsCtx.stroke();
+                keypointsCtx.arc(point.x, point.y, 3, 0, 2 * Math.PI);
+                keypointsCtx.fill();
             });
         }
-		
-
 
 
 
