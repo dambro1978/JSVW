@@ -3,17 +3,7 @@
                 const gradientThreshold = parseFloat(thresholdInput) || 500;
                 const gaussSize = parseInt(gaussSizeInput, 10) || 5;
 
-                // Call the keypoints detection algorithm
-                const keypointsJson = KeypointsDetectionAlgorithm(img, gradientThreshold, gaussSize);
-
-                // Display keypoints in the textarea
-                document.getElementById('keypoints-box').value = JSON.stringify(keypointsJson, null, 2);
-
-                // Draw the image with keypoints on the canvas
-                drawImageWithKeypoints(img, keypointsJson);
-            };
-            img.src = URL.createObjectURL(file);
-        });
+     
 
         /**
          * Creates a Gaussian kernel for image blurring.
