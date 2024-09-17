@@ -11,7 +11,7 @@ It can be enriched
 
  bindJ(data, Type, url, contentType, dataType) passing Json text, data format, or data for control view interface like jquery UI
 
- bindJ(data, Type, url) passing Json text, data format, or data for control view interface like jquery UI
+ bindJ3(data, Type, url) passing Json text, data format, or data for control view interface like jquery UI
 
  bindS(data, Type, url) passing String text, data format or data for control view interface like jquery UI
 
