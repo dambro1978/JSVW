@@ -1,29 +1,4 @@
-These libraries JSTC.JS allow you to make asynchronous calls to any service or api or rpc, c#, php, java etc...
-And contains several functions for computer vision in javascript
-storing the result also in an asynchronous variable.
-Indeed a time capsule.
-Ideal for use with jquery controls, or others,
-It can be an alternative to Angular or for binding to ReactJS, SignalR etc.
-
-This useful library of asynchronous functions for using variables in extemporaneous parallel streams. 
-And 2 functions, one to convert text to binary: binaryToText(); and the second to convert the binary to text format: binaryToText().
-It can be enriched
-
- bindJ(data, Type, url, contentType, dataType) passing Json text, data format, or data for control view interface like jquery UI
-
- bindJ3(data, Type, url) passing Json text, data format, or data for control view interface like jquery UI
-
- bindS(data, Type, url) passing String text, data format or data for control view interface like jquery UI
-
- bindX(data, Type, url) passing XML text, data format or data for control view interface like jquery UI
-
- bindB(data, Type, url) passing some text the function converts it into bits and does the binding, while the response in bits is converted into text
-
- bindH(data, Type, url) passing Html text, data format or data for control view interface like jquery UI
-
- binaryToText() to convert binary in text
-
- textToBinary() to convert text in binary
+These libraries JSVW.JS  contains several functions for computer vision in javascript.
 
 And this project implements too a comprehensive keypoint detection and matching algorithm for images using JavaScript and SQL.js, enabling client-side image analysis and pattern recognition within a web browser. The core components and functionalities of the project are as follows:
 
