@@ -429,5 +429,337 @@ async function connectToDatabase(dbFilePath) {
     return db;
 }
 
+// ========================================
+// sqlGraphOptimizer.js
+// Translated from sql_graph_optimizer.py (by Giuseppe D’Ambrosio)
+// JavaScript version with English comments
+// ========================================
+
+import pkg from 'pg';
+const { Client } = pkg;
+
+// Utility function for queries
+async function execQuery(client, sql, params = []) {
+  const res = await client.query(sql, params);
+  return res.rows;
+}
+
+// ----------------------------
+// Database Schema Mapping
+// ----------------------------
+
+/**
+ * Create table to store database schema (tables, columns, keys).
+ */
+export async function createDbSchemaTable(client) {
+  const sql = `
+    CREATE TABLE IF NOT EXISTS db_schema (
+      schema_name TEXT,
+      table_name TEXT,
+      column_name TEXT,
+      data_type TEXT,
+      is_primary_key BOOLEAN,
+      is_foreign_key BOOLEAN,
+      references_table TEXT,
+      references_column TEXT,
+      PRIMARY KEY (schema_name, table_name, column_name)
+    );
+  `;
+  await client.query(sql);
+}
+
+/**
+ * Populate db_schema from information_schema metadata.
+ */
+export async function populateDbSchema(client) {
+  const columnsSql = `
+    SELECT table_schema, table_name, column_name, data_type
+    FROM information_schema.columns
+    WHERE table_schema NOT IN ('pg_catalog','information_schema');
+  `;
+
+  const pkSql = `
+    SELECT kcu.table_schema, kcu.table_name, kcu.column_name
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name
+    WHERE tc.constraint_type = 'PRIMARY KEY';
+  `;
+
+  const fkSql = `
+    SELECT kcu.table_schema, kcu.table_name, kcu.column_name,
+           ccu.table_name AS references_table, ccu.column_name AS references_column
+    FROM information_schema.table_constraints AS tc
+    JOIN information_schema.key_column_usage AS kcu
+      ON tc.constraint_name = kcu.constraint_name
+    JOIN information_schema.constraint_column_usage AS ccu
+      ON ccu.constraint_name = tc.constraint_name
+    WHERE tc.constraint_type = 'FOREIGN KEY';
+  `;
+
+  const columns = await execQuery(client, columnsSql);
+  const pkRows = await execQuery(client, pkSql);
+  const fkRows = await execQuery(client, fkSql);
+
+  const pkSet = new Set(pkRows.map(r => `${r.table_schema}.${r.table_name}.${r.column_name}`));
+  const fkMap = new Map(
+    fkRows.map(r => [
+      `${r.table_schema}.${r.table_name}.${r.column_name}`,
+      { refTable: r.references_table, refCol: r.references_column },
+    ])
+  );
+
+  for (const col of columns) {
+    const key = `${col.table_schema}.${col.table_name}.${col.column_name}`;
+    const isPk = pkSet.has(key);
+    const fkInfo = fkMap.get(key) || { refTable: null, refCol: null };
+    const isFk = fkMap.has(key);
+
+    await client.query(
+      `
+      INSERT INTO db_schema (schema_name, table_name, column_name, data_type,
+                             is_primary_key, is_foreign_key, references_table, references_column)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      ON CONFLICT (schema_name, table_name, column_name) DO UPDATE
+        SET data_type=EXCLUDED.data_type,
+            is_primary_key=EXCLUDED.is_primary_key,
+            is_foreign_key=EXCLUDED.is_foreign_key,
+            references_table=EXCLUDED.references_table,
+            references_column=EXCLUDED.references_column;
+      `,
+      [
+        col.table_schema, col.table_name, col.column_name, col.data_type,
+        isPk, isFk, fkInfo.refTable, fkInfo.refCol
+      ]
+    );
+  }
+}
+
+// ----------------------------
+// Join Metrics
+// ----------------------------
+
+/**
+ * Create table to store real join metrics (performance data).
+ */
+export async function createJoinMetricsTable(client) {
+  const sql = `
+    CREATE TABLE IF NOT EXISTS join_metrics (
+      left_table TEXT NOT NULL,
+      left_column TEXT NOT NULL,
+      right_table TEXT NOT NULL,
+      right_column TEXT NOT NULL,
+      join_type TEXT DEFAULT 'INNER',
+      actual_rows BIGINT,
+      actual_time_ms FLOAT,
+      left_is_pk BOOLEAN,
+      right_is_pk BOOLEAN,
+      left_is_fk BOOLEAN,
+      right_is_fk BOOLEAN,
+      last_seen TIMESTAMP DEFAULT NOW(),
+      PRIMARY KEY (left_table, left_column, right_table, right_column)
+    );
+  `;
+  await client.query(sql);
+}
+
+/**
+ * Collect real-world join metrics and store them in join_metrics.
+ */
+export async function populateJoinMetricsReal(client) {
+  const fkRows = await execQuery(client, `
+    SELECT table_name, column_name, references_table, references_column, is_primary_key, is_foreign_key
+    FROM db_schema
+    WHERE is_foreign_key = TRUE;
+  `);
+
+  for (const row of fkRows) {
+    const { table_name: left, column_name: leftCol, references_table: right, references_column: rightCol, is_primary_key: leftPk, is_foreign_key: leftFk } = row;
+
+    const rightRes = await execQuery(client, `
+      SELECT is_primary_key, is_foreign_key
+      FROM db_schema
+      WHERE table_name=$1 AND column_name=$2
+    `, [right, rightCol]);
+
+    if (rightRes.length === 0) continue;
+    const { is_primary_key: rightPk, is_foreign_key: rightFk } = rightRes[0];
+
+    const joinSql = `SELECT COUNT(*) FROM ${left} l JOIN ${right} r ON l.${leftCol} = r.${rightCol}`;
+    const start = performance.now();
+    let rowCount = 0;
+
+    try {
+      const res = await execQuery(client, joinSql);
+      rowCount = parseInt(res[0].count);
+    } catch (e) {
+      console.warn(`[WARN] Join failed for ${left}-${right}: ${e.message}`);
+      continue;
+    }
+
+    const elapsed = performance.now() - start;
+
+    await client.query(`
+      INSERT INTO join_metrics (
+        left_table,left_column,right_table,right_column,join_type,
+        actual_rows,actual_time_ms,
+        left_is_pk,right_is_pk,left_is_fk,right_is_fk,last_seen
+      )
+      VALUES ($1,$2,$3,$4,'INNER',$5,$6,$7,$8,$9,$10,NOW())
+      ON CONFLICT (left_table,left_column,right_table,right_column) DO UPDATE
+        SET actual_rows=EXCLUDED.actual_rows,
+            actual_time_ms=EXCLUDED.actual_time_ms,
+            left_is_pk=EXCLUDED.left_is_pk,
+            right_is_pk=EXCLUDED.right_is_pk,
+            left_is_fk=EXCLUDED.left_is_fk,
+            right_is_fk=EXCLUDED.right_is_fk,
+            last_seen=NOW();
+    `, [left, leftCol, right, rightCol, rowCount, elapsed, leftPk, rightPk, leftFk, rightFk]);
+  }
+}
+
+// ----------------------------
+// Join Weights
+// ----------------------------
+
+/**
+ * Create table to store join weights (used for graph optimization).
+ */
+export async function createJoinWeightsTable(client) {
+  const sql = `
+    CREATE TABLE IF NOT EXISTS join_weights (
+      left_table TEXT NOT NULL,
+      left_column TEXT NOT NULL,
+      right_table TEXT NOT NULL,
+      right_column TEXT NOT NULL,
+      weight FLOAT NOT NULL,
+      last_update TIMESTAMP DEFAULT NOW(),
+      PRIMARY KEY (left_table,left_column,right_table,right_column)
+    );
+  `;
+  await client.query(sql);
+}
+
+/**
+ * Calculate and update join weights based on performance metrics.
+ */
+export async function updateJoinWeights(client, alpha = 0.6, beta = 0.3, gamma = 0.1) {
+  const metrics = await execQuery(client, `
+    SELECT left_table,left_column,right_table,right_column,
+           actual_rows,actual_time_ms,left_is_pk,right_is_pk
+    FROM join_metrics
+  `);
+
+  for (const m of metrics) {
+    const indexPenalty = (m.left_is_pk || m.right_is_pk) ? 0.5 : 1.0;
+    const weight = alpha * m.actual_time_ms + beta * Math.log1p(m.actual_rows) + gamma * indexPenalty;
+
+    await client.query(`
+      INSERT INTO join_weights (left_table,left_column,right_table,right_column,weight,last_update)
+      VALUES ($1,$2,$3,$4,$5,NOW())
+      ON CONFLICT (left_table,left_column,right_table,right_column)
+      DO UPDATE SET weight=EXCLUDED.weight,last_update=NOW();
+    `, [m.left_table, m.left_column, m.right_table, m.right_column, weight]);
+  }
+}
+
+// ----------------------------
+// Dijkstra Shortest Path
+// ----------------------------
+
+/**
+ * Build a weighted graph from join_weights table.
+ */
+export async function buildGraph(client) {
+  const rows = await execQuery(client, `SELECT left_table,right_table,weight FROM join_weights`);
+  const graph = {};
+
+  for (const r of rows) {
+    if (!graph[r.left_table]) graph[r.left_table] = {};
+    if (!graph[r.right_table]) graph[r.right_table] = {};
+    graph[r.left_table][r.right_table] = r.weight;
+    graph[r.right_table][r.left_table] = r.weight;
+  }
+  return graph;
+}
+
+/**
+ * Implementation of Dijkstra's shortest path algorithm.
+ */
+export function dijkstra(graph, start, end) {
+  const queue = [[0, start, []]];
+  const visited = new Set();
+
+  while (queue.length > 0) {
+    // Get node with smallest cost
+    queue.sort((a, b) => a[0] - b[0]);
+    const [cost, node, path] = queue.shift();
+
+    if (visited.has(node)) continue;
+    visited.add(node);
+    const newPath = [...path, node];
+
+    if (node === end) return { cost, path: newPath };
+
+    for (const neighbor in graph[node] || {}) {
+      if (!visited.has(neighbor)) {
+        queue.push([cost + graph[node][neighbor], neighbor, newPath]);
+      }
+    }
+  }
+  return { cost: Infinity, path: [] };
+}
+
+// ----------------------------
+// Query Builder (Post-Dijkstra)
+// ----------------------------
+
+/**
+ * Build an optimized SQL query based on the minimum join path.
+ * Uses db_schema relationships and Dijkstra-computed weights.
+ */
+export async function buildOptimizedQuery(client, startTable, endTable, selectColumns = []) {
+  const graph = await buildGraph(client);
+  const { cost, path } = dijkstra(graph, startTable, endTable);
+
+  if (!path.length || cost === Infinity) {
+    throw new Error(`No path found between ${startTable} and ${endTable}`);
+  }
+
+  const joinConditions = [];
+  for (let i = 0; i < path.length - 1; i++) {
+    const left = path[i];
+    const right = path[i + 1];
+
+    const rel = await execQuery(client, `
+      SELECT column_name, references_table, references_column
+      FROM db_schema
+      WHERE (table_name=$1 AND references_table=$2)
+         OR (table_name=$2 AND references_table=$1)
+      LIMIT 1;
+    `, [left, right]);
+
+    if (rel.length === 0) throw new Error(`No join condition found between ${left} and ${right}`);
+
+    const { column_name: col, references_table: refTable, references_column: refCol } = rel[0];
+    if (refTable === right)
+      joinConditions.push(`${left}.${col} = ${right}.${refCol}`);
+    else
+      joinConditions.push(`${right}.${col} = ${left}.${refCol}`);
+  }
+
+  const selectClause = selectColumns.length > 0 ? selectColumns.join(', ') : '*';
+  let fromClause = path[0];
+
+  for (let i = 1; i < path.length; i++) {
+    fromClause += `\nJOIN ${path[i]} ON ${joinConditions[i - 1]}`;
+  }
+
+  const query = `SELECT ${selectClause}\nFROM ${fromClause};`;
+
+  return { cost, path, sql: query };
+}
+
 
 //Created by Giuseppe D'Ambrosio
+
